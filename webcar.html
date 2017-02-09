@@ -1,0 +1,120 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		
+		<style>
+		body {
+			overflow	: hidden;
+			padding		: 0;
+			margin		: 0;
+			background-color: #BBB;
+		}
+		#info {
+			position	: absolute;
+			top		: 0px;
+			width		: 100%;
+			padding		: 5px;
+			text-align	: center;
+		}
+		#info a {
+			color		: #66F;
+			text-decoration	: none;
+		}
+		#info a:hover {
+			text-decoration	: underline;
+		}
+		#container {
+			width		: 100%;
+			height		: 100%;
+			overflow	: hidden;
+			padding		: 0;
+			margin		: 0;
+			-webkit-user-select	: none;
+			-moz-user-select	: none;
+		}
+		</style>
+	</head>
+	<body>
+	
+		<div id="container"></div>
+		<div id="info">
+			<span id="result"></span>
+		</div> 
+		<script src="virtualjoystick.js"></script>
+		<script>
+			var viewportwidth;
+			var viewportheight;
+			
+		
+			// the more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight			  
+			if (typeof window.innerWidth != 'undefined'){
+			      viewportwidth = window.innerWidth,
+			      viewportheight = window.innerHeight
+			}// IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
+			else if (typeof document.documentElement != 'undefined'
+			    && typeof document.documentElement.clientWidth !=
+			    'undefined' && document.documentElement.clientWidth != 0){
+			      viewportwidth = document.documentElement.clientWidth,
+			      viewportheight = document.documentElement.clientHeight
+			}
+			else{ 			// older versions of IE
+			      viewportwidth = document.getElementsByTagName('body')[0].clientWidth,
+			      viewportheight = document.getElementsByTagName('body')[0].clientHeight
+			}
+
+			var maxPixelX = (viewportwidth/2)*0.8;
+			var maxPixelY = (viewportheight/2)*0.8;
+			
+     
+	      
+			console.log("touchscreen is", VirtualJoystick.touchScreenAvailable() ? "available" : "not available");
+				var WsSocket = new WebSocket("ws://"+location.host+":3000");
+			
+			WsSocket.onmessage = function (event) {
+			  console.log(event.data);
+			  }
+			
+			var joystick	= new VirtualJoystick({
+				container	: document.getElementById('container'),
+				mouseSupport	: true,
+			});
+			joystick.addEventListener('touchStart', function(){
+				console.log('start')
+				WsSocket.send("wheels 0");
+				WsSocket.send("speed 0");		
+			})
+			joystick.addEventListener('touchEnd', function(){
+				console.log('stop')
+				WsSocket.send("wheels 0");
+				WsSocket.send("speed 0");
+			})
+
+			setInterval(function(){
+				var outputEl	= document.getElementById('result');
+					
+				if( joystick.deltaX() != 0)
+				{
+					var percentX = joystick.deltaX() / maxPixelX * 100;
+					if(percentX > 100) percentX=100;
+					if(percentX < -100) percentX=-100;
+					WsSocket.send("wheels "+percentX);
+				}
+				
+				if( joystick.deltaY() != 0)
+				{
+					var percentY = -1 * joystick.deltaY() / maxPixelY * 100;
+					if(percentY > 100) percentY=100;
+					if(percentY < -100) percentY=-100;
+					WsSocket.send("speed "+percentY);
+				}
+				if(WsSocket)
+                    
+				
+				outputEl.innerHTML	= '<b>Result:</b> '
+					+ ' speed:'+percentY
+					+ ' wheels:'+percentX
+			}, 1/30 * 1000);
+		</script>
+	</body>
+</html>

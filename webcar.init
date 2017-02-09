@@ -1,0 +1,31 @@
+ 
+#! /bin/sh
+PATH=~/bin
+DAEMON=~/bin/webcar
+NAME=/bin/webcar
+DESC=/bin/webcar
+PID=/var/run/webcar/webcar.pid
+
+test -x $DAEMON || exit 0
+
+# Include nginx defaults if available
+if [ -f /etc/default/webcar ] ; then
+        . /etc/default/bin/webcar
+fi
+
+set -e
+
+case "$1" in
+  start)
+        echo -n "Starting $DESC: "
+        webcar
+        echo "$NAME."
+        ;;
+  *)
+        N=/etc/init.d/$NAME
+        echo "Usage: $N {start}" >&2
+        exit 1
+        ;;
+esac
+
+exit 0
